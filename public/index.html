@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brain Search - Second Brain</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0f0d;--surface:#11181a;--surface2:#16201f;--border:#1e2a28;--border2:#2c3d3a;
+  --text:#d5e3df;--text2:#9fb3ad;--muted:#647772;--teal:#2dd4bf;--amber:#fbbf24;--red:#f87171;--green:#34d399;--purple:#a78bfa;
+  --mono:'JetBrains Mono',Consolas,monospace;--hud:'Chakra Petch','Segoe UI',sans-serif;}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;
+  background-image:radial-gradient(900px 380px at 70% -8%,rgba(45,212,191,.07),transparent 70%),
+    linear-gradient(rgba(45,212,191,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(45,212,191,.02) 1px,transparent 1px);
+  background-size:100% 100%,34px 34px,34px 34px}
+.wrap{max-width:880px;margin:0 auto;padding:22px 24px 60px}
+.top{display:flex;align-items:center;gap:14px;padding:14px 0 18px;border-bottom:1px solid var(--border2);margin-bottom:20px}
+.logo{width:40px;height:40px;border-radius:7px;background:linear-gradient(135deg,var(--teal),#0ea5a4);display:flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 0 16px rgba(45,212,191,.45)}
+.title{font-family:var(--hud);font-weight:700;font-size:20px;letter-spacing:1px;text-transform:uppercase}
+.subtitle{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.home{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);text-decoration:none;border:1px solid rgba(45,212,191,.4);background:rgba(45,212,191,.12);padding:7px 12px;border-radius:6px;white-space:nowrap}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:8px 16px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--teal);color:#06110f;border-color:var(--teal)}
+.searchbox{display:flex;gap:8px;margin-bottom:8px}
+input{flex:1;background:#0c1311;border:1px solid var(--border2);border-radius:8px;padding:12px 14px;color:var(--text);font-size:15px;outline:none}
+input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(45,212,191,.12)}
+.go{font-family:var(--hud);font-weight:700;text-transform:uppercase;font-size:13px;padding:0 22px;border-radius:8px;border:1px solid var(--teal);background:var(--teal);color:#06110f;cursor:pointer}
+.hint{font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:16px}
+.res{background:linear-gradient(180deg,var(--surface),#0e1514);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.res-h{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.res-title{font-weight:700;font-size:14px;color:var(--teal)}
+.res-file{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto}
+.score{font-family:var(--mono);font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:3px;color:var(--amber);border:1px solid rgba(251,191,36,.4)}
+.res-text{font-size:13px;color:var(--text2);line-height:1.6}
+.answer{background:linear-gradient(180deg,var(--surface),#0e1514);border:1px solid var(--teal)44;border-radius:8px;padding:16px 18px;margin-bottom:14px;white-space:pre-wrap;line-height:1.7;font-size:14px}
+.srcs{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.srcs b{color:var(--text2)}
+.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:var(--amber);border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.6}
+.muted{color:var(--muted);font-size:13px;padding:14px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="logo">🧠</div>
+    <div><div class="title">Brain Search</div><div class="subtitle" id="sub">semantic search over your second brain · local, no API</div></div>
+    <a class="home" href="http://localhost:3000">⌂ Command Center</a>
+  </div>
+
+  <div class="tabs">
+    <button id="tab-search" class="on" onclick="setMode('search')">🔍 Search</button>
+    <button id="tab-ask" onclick="setMode('ask')">💬 Ask (AI)</button>
+  </div>
+
+  <div class="searchbox">
+    <input id="q" placeholder="Search your notes by meaning…" onkeydown="if(event.key==='Enter')run()">
+    <button class="go" onclick="run()">Go</button>
+  </div>
+  <div class="hint" id="hint">Semantic search finds notes by meaning, not just keywords.</div>
+
+  <div id="out"></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>(s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let MODE='search';
+function setMode(m){
+  MODE=m;
+  $('#tab-search').classList.toggle('on',m==='search');
+  $('#tab-ask').classList.toggle('on',m==='ask');
+  $('#hint').textContent = m==='search' ? 'Semantic search finds notes by meaning, not just keywords.' : 'Ask a question - AI answers using your notes as context (needs local Ollama).';
+  $('#q').placeholder = m==='search' ? 'Search your notes by meaning…' : 'Ask anything about your notes…';
+  $('#out').innerHTML='';
+}
+async function run(){
+  const q=$('#q').value.trim(); if(!q) return;
+  $('#out').innerHTML='<div class="muted">Thinking…</div>';
+  if(MODE==='search'){
+    const r=await fetch('/api/search?q='+encodeURIComponent(q)).then(r=>r.json());
+    if(!r.length){$('#out').innerHTML='<div class="muted">No matches (or model still loading - try again in a few seconds).</div>';return;}
+    $('#out').innerHTML=r.map(x=>`<div class="res">
+      <div class="res-h"><span class="res-title">${esc(x.title)}</span><span class="score">${(x.score*100).toFixed(0)}% match</span><span class="res-file">${esc(x.file)}</span></div>
+      <div class="res-text">${esc(x.text)}</div></div>`).join('');
+  } else {
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q})}).then(r=>r.json());
+    let html='';
+    if(r.answer){ html+=`<div class="answer">${esc(r.answer)}</div>`; }
+    else if(r.error){ html+=`<div class="warn">⚠ ${esc(r.error)}</div>`; }
+    if(r.sources&&r.sources.length){ html+=`<div class="srcs"><b>Sources:</b> ${r.sources.map(s=>esc(s.title)).join(' · ')}</div>`; }
+    $('#out').innerHTML=html||'<div class="muted">No response.</div>';
+  }
+}
+fetch('/api/status').then(r=>r.json()).then(s=>{ $('#sub').textContent=`${s.chunks} chunks indexed · local, no API`; });
+</script>
+</body>
+</html>
