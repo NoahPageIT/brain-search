@@ -4,7 +4,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const VAULT = 'C:\\Users\\mediabox\\Projects\\second-brain';
+// Vault location: override with VAULT_PATH, else per-machine default
+// (Windows keeps the vault in Projects; the Mac clone lives in Documents)
+const os = require('os');
+const VAULT = process.env.VAULT_PATH ||
+  (process.platform === 'win32'
+    ? 'C:\\Users\\mediabox\\Projects\\second-brain'
+    : path.join(os.homedir(), 'Documents', 'SecondBrain'));
 const OUT = path.join(__dirname, 'index.json');
 
 function walk(dir, acc = []) {
